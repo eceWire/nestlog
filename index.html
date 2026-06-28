@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NestLog</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── THEMES ── */
+body[data-theme="light"] {
+  --bg: #F8F4EE;
+  --card: #FFFFFF;
+  --card2: #F2EDE4;
+  --card3: #EBE4D8;
+  --border: #E0D6C8;
+  --border2: #C8BCA8;
+  --t1: #1A1410;
+  --t2: #5A4E42;
+  --t3: #9A8878;
+  --shadow: 0 2px 12px rgba(0,0,0,.06);
+  --shadow2: 0 8px 32px rgba(0,0,0,.12);
+  /* sidebar always has its own look */
+  --sb: #1E1A16;
+  --sb2: rgba(255,255,255,.08);
+  --sb3: rgba(255,255,255,.14);
+  --sbt: rgba(255,255,255,.55);
+  --sbt2: rgba(255,255,255,.75);
+  --sbt3: #ffffff;
+  --sblbl: rgba(255,255,255,.3);
+  --sbmuted: rgba(255,255,255,.35);
+  --sbborder: rgba(255,255,255,.09);
+}
+body[data-theme="dark"] {
+  --bg: #151210;
+  --card: #1E1A16;
+  --card2: #272219;
+  --card3: #322C24;
+  --border: #38322A;
+  --border2: #504438;
+  --t1: #F0E8DC;
+  --t2: #B8A898;
+  --t3: #807060;
+  --shadow: 0 2px 12px rgba(0,0,0,.25);
+  --shadow2: 0 8px 32px rgba(0,0,0,.4);
+  /* sidebar is LIGHTER than page in dark mode so it's visible */
+  --sb: #2A2520;
+  --sb2: rgba(255,255,255,.09);
+  --sb3: rgba(255,255,255,.16);
+  --sbt: rgba(255,255,255,.6);
+  --sbt2: rgba(255,255,255,.8);
+  --sbt3: #ffffff;
+  --sblbl: rgba(255,255,255,.35);
+  --sbmuted: rgba(255,255,255,.4);
+  --sbborder: rgba(255,255,255,.11);
+}
+
+/* ── BASE ── */
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--t1);
+  height: 100vh;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: background .25s, color .25s;
+}
+* { transition: background-color .2s, border-color .2s, color .15s; }
+button { cursor: pointer; border: none; background: transparent; font-family: 'DM Sans', sans-serif; }
+input, select, textarea { font-family: 'DM Sans', sans-serif; outline: none; }
+.serif { font-family: 'Fraunces', serif; }
+
+/* ── LAYOUT ── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* ══════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════ */
+.sb {
+  width: 256px;
+  flex-shrink: 0;
+  background: var(--sb);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.sb-logo {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid var(--sbborder);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sb-logo-mark {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #C07A48, #8B5A2B);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.sb-logo-name { font-family: 'Fraunces', serif; font-size: 18px; color: var(--sbt3); line-height: 1; }
+.sb-logo-tag { font-size: 9px; color: var(--sblbl); letter-spacing: .7px; text-transform: uppercase; margin-top: 2px; }
+
+.sb-section { padding: 10px 10px 3px; }
+.sb-label {
+  font-size: 9px; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; color: var(--sblbl);
+  padding: 2px 8px 5px; display: block;
+}
+.sb-btn {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 10px; border-radius: 9px;
+  color: var(--sbt); font-size: 12px; font-weight: 600;
+  width: 100%; text-align: left;
+  border: none; background: transparent;
+  transition: background .15s, color .15s;
+  cursor: pointer;
+}
+.sb-btn:hover { background: var(--sb2); color: var(--sbt2); }
+.sb-btn.active { background: var(--sb3); color: var(--sbt3); }
+.sb-btn .ic { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+.sb-btn .badge {
+  margin-left: auto; font-size: 10px;
+  background: rgba(255,255,255,.1); padding: 1px 7px;
+  border-radius: 100px; color: var(--sbmuted);
+}
+.sb-btn.active .badge { background: rgba(255,255,255,.18); color: var(--sbt2); }
+
+.sb-profiles { flex: 1; overflow-y: auto; padding: 0 10px 8px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.06) transparent; }
+.profile-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 9px; border-radius: 9px;
+  cursor: pointer; transition: background .15s;
+  border: 1px solid transparent; margin-bottom: 2px;
+  position: relative;
+}
+.profile-item:hover { background: var(--sb2); }
+.profile-item.active { background: var(--sb3); border-color: var(--sbborder); }
+.profile-item.active::before {
+  content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--ac, #C07A48);
+}
+.pi-av {
+  width: 31px; height: 31px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.pi-name { font-weight: 700; font-size: 12px; color: var(--sbt3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pi-sub { font-size: 10px; color: var(--sbmuted); margin-top: 1px; }
+.pi-del {
+  margin-left: auto; width: 18px; height: 18px;
+  border-radius: 4px; font-size: 12px; color: var(--sbmuted);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; opacity: 0; transition: opacity .15s, background .15s, color .15s;
+}
+.profile-item:hover .pi-del { opacity: 1; }
+.pi-del:hover { background: rgba(200,60,60,.3); color: #FF9999; }
+
+.sb-add {
+  margin: 4px 10px 0;
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 11px; border-radius: 9px;
+  border: 1.5px dashed rgba(255,255,255,.15);
+  color: var(--sbmuted); font-size: 12px; font-weight: 600;
+  width: calc(100% - 20px); transition: all .15s;
+}
+.sb-add:hover { border-color: #C07A48; color: #C07A48; background: rgba(192,122,72,.08); }
+
+.sb-foot { padding: 10px; border-top: 1px solid var(--sbborder); }
+.sb-notif-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 10px; border-radius: 8px;
+  background: rgba(255,255,255,.05); font-size: 11px;
+  color: var(--sbt); margin-bottom: 7px;
+}
+.notif-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.18); flex-shrink: 0; transition: all .3s; }
+.notif-dot.on { background: #4CAF50; box-shadow: 0 0 0 3px rgba(76,175,80,.2); }
+.sb-foot-row { display: flex; gap: 5px; }
+.sb-foot-btn {
+  flex: 1; padding: 6px 4px; border-radius: 8px;
+  border: 1px solid var(--sbborder);
+  color: var(--sbt); font-size: 10px; font-weight: 700;
+  text-align: center; transition: all .15s;
+}
+.sb-foot-btn:hover { border-color: #C07A48; color: #FFAE73; background: rgba(192,122,72,.1); }
+
+/* progress bar in sidebar */
+.pb-wrap { background: rgba(255,255,255,.1); border-radius: 100px; height: 3px; overflow: hidden; margin-top: 3px; }
+.pb-fill { height: 100%; border-radius: 100px; transition: width .4s; }
+
+/* ══════════════════════════════════════
+   MAIN
+══════════════════════════════════════ */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.topbar {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 12px 22px; display: flex; align-items: center;
+  justify-content: space-between; gap: 10px; flex-shrink: 0; flex-wrap: wrap;
+}
+.tb-name { font-family: 'Fraunces', serif; font-size: 18px; }
+.tb-meta { font-size: 11px; color: var(--t3); margin-top: 1px; }
+
+.btn {
+  padding: 7px 15px; border-radius: 100px;
+  font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: all .18s; cursor: pointer; border: none;
+}
+.btn-dark { background: var(--t1); color: var(--bg); }
+.btn-dark:hover { opacity: .85; transform: translateY(-1px); }
+.btn-ghost { border: 1.5px solid var(--border2); color: var(--t2); background: transparent; }
+.btn-ghost:hover { background: var(--card2); }
+.btn-sm { padding: 5px 12px; font-size: 11px; }
+.btn-ac { color: #fff; }
+.btn-ac:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* ══════════════════════════════════════
+   VIEWS
+══════════════════════════════════════ */
+.view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Empty */
+.empty-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+.empty-ic { font-size: 54px; margin-bottom: 14px; animation: bob 3s ease-in-out infinite; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+/* Detail header */
+.detail-head { background: var(--card); border-bottom: 1px solid var(--border); padding: 15px 22px 0; flex-shrink: 0; }
+.dh-row { display: flex; align-items: center; gap: 12px; margin-bottom: 13px; }
+.dh-av { width: 46px; height: 46px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+.dh-name { font-family: 'Fraunces', serif; font-size: 20px; }
+.dh-meta { font-size: 12px; color: var(--t2); margin-top: 2px; }
+.ring-wrap { position: relative; width: 46px; height: 46px; margin-left: auto; flex-shrink: 0; }
+.ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+
+.tab-bar { display: flex; overflow-x: auto; scrollbar-width: none; }
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn {
+  padding: 9px 14px; font-size: 12px; font-weight: 700;
+  color: var(--t3); border-bottom: 2.5px solid transparent;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  background: transparent; transition: color .15s, border-color .15s;
+  border-top: none; border-left: none; border-right: none;
+}
+.tab-btn:hover { color: var(--t2); }
+.tab-btn.active { color: var(--ac, #C07A48); border-bottom-color: var(--ac, #C07A48); }
+
+.detail-body { flex: 1; overflow-y: auto; padding: 18px 22px; }
+
+/* ══════════════════════════════════════
+   COMMON COMPONENTS
+══════════════════════════════════════ */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 13px; padding: 13px; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.card-title { font-weight: 800; font-size: 13px; }
+.card-sub { font-size: 10px; color: var(--t3); margin-top: 1px; }
+
+.section-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--t3); margin: 14px 0 8px; display: flex; align-items: center; gap: 6px; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.banner { padding: 9px 13px; border-radius: 9px; font-size: 12px; margin-bottom: 11px; border: 1px solid var(--border); }
+.empty-tab { text-align: center; padding: 28px 16px; color: var(--t3); }
+.empty-tab .ei { font-size: 32px; margin-bottom: 7px; }
+.empty-tab .et { font-family: 'Fraunces', serif; font-size: 14px; color: var(--t2); margin-bottom: 4px; }
+
+/* ── FORM FIELDS ── */
+.add-panel { background: var(--card2); border: 1.5px dashed var(--border2); border-radius: 13px; padding: 13px; }
+.add-panel-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--t3); margin-bottom: 10px; }
+.f-row { display: flex; gap: 7px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; }
+.f-group { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.f-group label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; color: var(--t3); }
+.f-inp {
+  padding: 8px 10px; border: 1.5px solid var(--border2);
+  border-radius: 9px; color: var(--t1); background: var(--card);
+  font-size: 13px; width: 100%; transition: border-color .15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.f-inp:focus { border-color: var(--ac, #C07A48); }
+.f-sel {
+  padding: 8px 10px; border: 1.5px solid var(--border2);
+  border-radius: 9px; color: var(--t1); background: var(--card);
+  font-size: 13px; width: 100%; transition: border-color .15s;
+  appearance: auto; font-family: 'DM Sans', sans-serif; cursor: pointer;
+}
+.f-sel:focus { border-color: var(--ac, #C07A48); }
+.toggle-row { display: flex; align-items: center; gap: 8px; padding-top: 9px; border-top: 1px solid var(--border); }
+.tgl { position: relative; display: inline-block; width: 32px; height: 18px; flex-shrink: 0; }
+.tgl input { opacity: 0; width: 0; height: 0; }
+.tgl-track { position: absolute; inset: 0; background: var(--border2); border-radius: 100px; cursor: pointer; transition: .2s; }
+.tgl-track::before { content: ''; position: absolute; height: 12px; width: 12px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.tgl input:checked + .tgl-track { background: var(--ac, #C07A48); }
+.tgl input:checked + .tgl-track::before { transform: translateX(14px); }
+
+/* ── SCHEDULE ROWS ── */
+.ev-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.ev-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--card); border-radius: 9px; border: 1px solid var(--border); }
+.ev-row.done { opacity: .38; }
+.ev-time { font-weight: 800; font-size: 12px; min-width: 54px; color: var(--ac, #C07A48); flex-shrink: 0; }
+.ev-icon { width: 28px; height: 28px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.ev-info { flex: 1; min-width: 0; }
+.ev-name { font-weight: 700; font-size: 12px; }
+.ev-note { font-size: 11px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-bell { width: 26px; height: 26px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; justify-content: center; color: var(--t3); flex-shrink: 0; transition: background .15s; }
+.ev-bell:hover { background: var(--card2); }
+.ev-bell.on { color: var(--ac, #C07A48); }
+.ev-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border2); font-size: 11px; color: transparent; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; transition: all .2s; }
+.ev-check:hover { border-color: var(--ac, #C07A48); }
+.ev-check.done { color: #fff; }
+.ev-del { width: 20px; height: 20px; color: var(--t3); font-size: 13px; border-radius: 5px; flex-shrink: 0; opacity: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.ev-row:hover .ev-del { opacity: 1; }
+.ev-del:hover { background: #FDEAEA; color: #C44; }
+
+/* ── LOG LIST ── */
+.log-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; margin-top: 7px; }
+.log-row { display: flex; align-items: center; gap: 7px; padding: 6px 9px; background: var(--card2); border-radius: 8px; }
+.log-time { font-weight: 700; color: var(--ac, #C07A48); min-width: 48px; font-size: 11px; flex-shrink: 0; }
+.log-text { flex: 1; font-weight: 500; font-size: 11px; }
+.log-del { width: 16px; height: 16px; font-size: 11px; color: var(--t3); flex-shrink: 0; opacity: 0; transition: all .15s; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+.log-row:hover .log-del { opacity: 1; }
+.log-del:hover { background: #FDEAEA; color: #C44; }
+.log-btn { padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 800; color: #fff; border: none; width: 100%; margin-bottom: 4px; transition: filter .15s; }
+.log-btn:hover { filter: brightness(1.1); }
+.log-btn-out { padding: 7px 12px; border-radius: 100px; font-size: 12px; font-weight: 800; border: 1.5px solid var(--ac, #C07A48); color: var(--ac, #C07A48); background: transparent; flex: 1; transition: background .15s; }
+.log-btn-out:hover { background: var(--ac-bg, #F5E8D8); }
+
+/* ── TIMING CHIPS ── */
+.chip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 9px; }
+.chip-card { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 12px; }
+.chip-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--t3); margin-bottom: 7px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; min-height: 22px; }
+.chip { display: flex; align-items: center; gap: 3px; padding: 3px 9px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+.chip-x { font-size: 13px; opacity: .5; padding: 0; line-height: 1; cursor: pointer; color: inherit; }
+.chip-x:hover { opacity: 1; }
+.chip-add { display: flex; gap: 5px; margin-top: 7px; }
+.chip-inp { flex: 1; padding: 6px 9px; border: 1.5px solid var(--border2); border-radius: 8px; font-size: 12px; color: var(--t1); background: var(--card2); min-width: 0; font-family: 'DM Sans', sans-serif; }
+.chip-inp:focus { border-color: var(--ac, #C07A48); outline: none; }
+.chip-add-btn { padding: 6px 11px; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 800; border: none; }
+
+/* ── HOW MUCH ── */
+.hm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px, 1fr)); gap: 9px; }
+.hm-card { background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: 12px; }
+.hm-card.span2 { grid-column: 1 / -1; }
+.hm-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; color: var(--t3); margin-bottom: 6px; }
+.hm-inp { width: 100%; padding: 7px 9px; border: 1.5px solid var(--border2); border-radius: 8px; font-size: 13px; color: var(--t1); background: var(--card2); font-family: 'DM Sans', sans-serif; transition: border-color .15s; }
+.hm-inp:focus { border-color: var(--ac, #C07A48); outline: none; }
+.hm-ta { width: 100%; min-height: 70px; padding: 8px 9px; border: 1.5px solid var(--border2); border-radius: 8px; font-size: 13px; color: var(--t1); background: var(--card2); font-family: 'DM Sans', sans-serif; resize: vertical; line-height: 1.6; transition: border-color .15s; }
+.hm-ta:focus { border-color: var(--ac, #C07A48); outline: none; }
+
+/* ── PROFILE INFO ── */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 13px; }
+.if-group { display: flex; flex-direction: column; gap: 3px; }
+.if-group.full { grid-column: 1 / -1; }
+.if-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; color: var(--t3); }
+.if-inp { padding: 7px 10px; border: 1.5px solid var(--border2); border-radius: 8px; color: var(--t1); background: var(--card2); width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px; transition: border-color .15s; }
+.if-inp:focus { border-color: var(--ac, #C07A48); outline: none; }
+.tag-row { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
+.tag { display: flex; align-items: center; gap: 3px; padding: 4px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+.tag-x { font-size: 13px; opacity: .5; cursor: pointer; color: inherit; line-height: 1; }
+.tag-x:hover { opacity: 1; }
+
+/* ── NOTES ── */
+.notes-ta { width: 100%; min-height: 140px; padding: 12px; border: 1.5px solid var(--border2); border-radius: 13px; color: var(--t1); background: var(--card); font-family: 'DM Sans', sans-serif; font-size: 14px; resize: vertical; line-height: 1.7; transition: border-color .15s; }
+.notes-ta:focus { border-color: var(--ac, #C07A48); outline: none; }
+
+/* ── CALENDAR ── */
+.cal-body { flex: 1; overflow-y: auto; padding: 16px 22px; }
+.cal-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-nav-btns { display: flex; gap: 6px; }
+.cal-nav-btn { width: 28px; height: 28px; border-radius: 7px; border: 1.5px solid var(--border2); background: var(--card); font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--t1); transition: all .15s; }
+.cal-nav-btn:hover { background: var(--card2); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--border); border-radius: 13px; overflow: hidden; background: var(--card); }
+.cal-dow { padding: 9px 0; text-align: center; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--t3); background: var(--card2); border-bottom: 1px solid var(--border); }
+.cal-cell { min-height: 72px; padding: 5px 6px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); cursor: pointer; transition: background .15s; vertical-align: top; }
+.cal-cell:nth-child(7n) { border-right: none; }
+.cal-cell:hover { background: var(--card2); }
+.cal-cell.other { opacity: .28; pointer-events: none; }
+.cal-cell.today .cal-day-num { background: var(--t1); color: var(--bg); border-radius: 50%; width: 21px; height: 21px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+.cal-cell.selected { background: var(--ac-bg, #F5E8D8); }
+.cal-cell.selected .cal-day-num { background: var(--ac, #C07A48); color: #fff; border-radius: 50%; width: 21px; height: 21px; display: flex; align-items: center; justify-content: center; }
+.cal-day-num { font-size: 11px; font-weight: 700; margin-bottom: 3px; width: 21px; height: 21px; display: flex; align-items: center; justify-content: center; }
+.cal-ev-pill { font-size: 9px; padding: 1px 5px; border-radius: 100px; margin-bottom: 2px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-sel-box { background: var(--card); border: 1px solid var(--border); border-radius: 13px; margin-top: 12px; overflow: hidden; }
+.cal-sel-head { padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--card2); display: flex; align-items: center; justify-content: space-between; }
+.cal-sel-list { padding: 8px; }
+.cal-ev-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card2); border-radius: 8px; margin-bottom: 5px; }
+.cal-ev-time { font-weight: 800; font-size: 11px; color: var(--t2); min-width: 52px; flex-shrink: 0; }
+.cal-ev-info { flex: 1; min-width: 0; }
+.cal-ev-name { font-weight: 700; font-size: 12px; }
+.cal-ev-who { font-size: 10px; color: var(--t3); }
+.cal-ev-del { width: 17px; height: 17px; border-radius: 4px; font-size: 11px; color: var(--t3); opacity: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.cal-ev-row:hover .cal-ev-del { opacity: 1; }
+.cal-ev-del:hover { background: #FDEAEA; color: #C44; }
+.cal-add-row { padding: 9px; border-top: 1px solid var(--border); background: var(--card2); display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end; }
+</style>
+</head>
+<body data-theme="light">
+
+<div class="app">
+  <div class="sb">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">🐶</div>
+      <div>
+        <div class="sb-logo-name">NestLog</div>
+        <div class="sb-logo-tag">Dog Care Tracker</div>
+      </div>
+    </div>
+
+    <div class="sb-section">
+      <button class="sb-btn active" id="nv-home" onclick="setView('home')">
+        <span class="ic">🏠</span> <span>Dashboard</span>
+      </button>
+      <button class="sb-btn" id="nv-cal" onclick="setView('cal')">
+        <span class="ic">📅</span> <span>Global Calendar</span>
+      </button>
+    </div>
+
+    <div class="sb-section" style="display:flex;flex-direction:column;overflow:hidden;flex:1">
+      <span class="sb-label">My Dogs</span>
+      <div class="sb-profiles" id="profiles-box"></div>
+      <button class="sb-add" onclick="openAddDogModal()">+ Add New Dog</button>
+    </div>
+
+    <div class="sb-foot">
+      <div class="sb-notif-row">
+        <div class="notif-dot" id="notif-dot"></div>
+        <span id="notif-text" style="text-overflow:ellipsis;overflow:hidden;white-space:nowrap;flex:1">No reminders right now</span>
+      </div>
+      <div class="sb-foot-row">
+        <button class="sb-foot-btn" onclick="toggleTheme()">🌓 Theme</button>
+        <button class="sb-foot-btn" onclick="clearAllData()" style="color:#FFAAAA">Reset All</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    
+    <div class="topbar">
+      <div>
+        <div class="tb-name serif" id="tb-title">NestLog Dashboard</div>
+        <div class="tb-meta" id="tb-subtitle">Keep your companion happy and tracked</div>
+      </div>
+    </div>
+
+    <div id="view-container" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
+
+  </div>
+</div>
+
+<script>
+// ── DATA AND CONFIG ──
+let state = {
+  theme: 'light',
+  view: 'home', // home, cal, detail
+  selectedDogId: null,
+  activeTab: 'schedule', // schedule, timing, howmuch, info, notes
+  dogs: [],
+  globalEvents: [], // { id, dogId, date(YYYY-MM-DD), time, title, who, finished }
+  calMonth: new Date().getMonth(),
+  calYear: new Date().getFullYear(),
+  calSelectedDate: new Date().toISOString().split('T')[0]
+};
+
+const DEFAULT_DOGS = [
+  {
+    id: 'dog-1',
+    name: 'Buddy',
+    sub: 'Golden Retriever',
+    avatar: '🦮',
+    themeColor: '#C07A48',
+    themeBg: '#F5E8D8',
+    age: '3 years',
+    weight: '72 lbs',
+    diet: '2 cups dry kibble kibble kibble',
+    meds: 'Heartworm chew on 1st of month',
+    tags: ['house-trained', 'high-energy'],
+    notes: 'Loves chasing tennis balls. Scared of thunder and fireworks.',
+    logs: [
+      { id: 'l1', time: '08:15 AM', text: 'Fed Breakfast' },
+      { id: 'l2', time: '09:00 AM', text: 'Long walk in park' }
+    ],
+    schedule: [
+      { id: 's1', time: '07:30 AM', title: 'Morning Walk & Pee', icon: '🌳', note: 'Check for solid stools', notify: true, done: true },
+      { id: 's2', time: '08:00 AM', title: 'Breakfast Roll', icon: '🍖', note: 'Mix kibble with warm water', notify: false, done: true },
+      { id: 's3', time: '06:00 PM', title: 'Evening Meal', icon: '🥣', note: 'Add supplement powder', notify: true, done: false },
+      { id: 's4', time: '09:30 PM', title: 'Nighttime Potty Break', icon: '🌙', note: 'Quick backyard access', notify: false, done: false }
+    ],
+    timing: {
+      walks: ['07:30 AM', '12:30 PM', '05:30 PM'],
+      brushing: ['Mon afternoon', 'Fri evening'],
+      accidents: []
+    },
+    howmuch: {
+      foodAmt: '4 cups total daily',
+      waterLvl: 'Normal consumption',
+      sleepTime: 'Approx 12-14 hours daily',
+      extraNotes: 'Monitor ear scratching'
+    }
+  }
+];
+
+const DEFAULT_GLOBAL = [
+  { id: 'ge1', dogId: 'dog-1', date: new Date().toISOString().split('T')[0], time: '10:00 AM', title: 'Annual Vet Checkup', who: 'Dr. Smith', finished: false }
+];
+
+// ── APP INITIALIZATION ──
+function init() {
+  const saved = localStorage.getItem('nestlog_state_dogs');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      state.dogs = parsed.dogs || [];
+      state.globalEvents = parsed.globalEvents || [];
+      state.theme = parsed.theme || 'light';
+    } catch(e) { loadDefaults(); }
+  } else {
+    loadDefaults();
+  }
+  
+  document.body.setAttribute('data-theme', state.theme);
+  renderSidebar();
+  updateView();
+  startNotificationTicker();
+}
+
+function loadDefaults() {
+  state.dogs = JSON.parse(JSON.stringify(DEFAULT_DOGS));
+  state.globalEvents = JSON.parse(JSON.stringify(DEFAULT_GLOBAL));
+  state.theme = 'light';
+  save();
+}
+
+function save() {
+  localStorage.setItem('nestlog_state_dogs', JSON.stringify({
+    dogs: state.dogs,
+    globalEvents: state.globalEvents,
+    theme: state.theme
+  }));
+}
+
+function clearAllData() {
+  if (confirm("Are you sure you want to reset everything back to the original configuration? All personalized updates will be removed.")) {
+    loadDefaults();
+    state.view = 'home';
+    state.selectedDogId = null;
+    document.body.setAttribute('data-theme', state.theme);
+    renderSidebar();
+    updateView();
+  }
+}
+
+// ── INTERACTION ACTIONS ──
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  document.body.setAttribute('data-theme', state.theme);
+  save();
+}
+
+function setView(v, id = null) {
+  state.view = v;
+  if (v === 'detail' && id) {
+    state.selectedDogId = id;
+  }
+  
+  // sidebar classes
+  document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.profile-item').forEach(p => p.classList.remove('active'));
+  
+  if (v === 'home') document.getElementById('nv-home').classList.add('active');
+  if (v === 'cal') document.getElementById('nv-cal').classList.add('active');
+  if (v === 'detail' && id) {
+    const el = document.getElementById(`p-item-${id}`);
+    if (el) el.classList.add('active');
+  }
+  
+  updateView();
+}
+
+function updateView() {
+  const container = document.getElementById('view-container');
+  const title = document.getElementById('tb-title');
+  const subtitle = document.getElementById('tb-subtitle');
+  
+  if (state.view === 'home') {
+    title.innerText = "NestLog Dashboard";
+    subtitle.innerText = "Keep your companion happy and tracked";
+    container.innerHTML = renderHomeView();
+  } else if (state.view === 'cal') {
+    title.innerText = "Global Event Calendar";
+    subtitle.innerText = "Consolidated view of vet appts, medication schedules, and deadlines";
+    container.innerHTML = renderCalendarView();
+    renderCalGrid();
+  } else if (state.view === 'detail') {
+    const dog = state.dogs.find(d => d.id === state.selectedDogId);
+    if (!dog) {
+      setView('home');
+      return;
+    }
+    document.documentElement.style.setProperty('--ac', dog.themeColor || '#C07A48');
+    document.documentElement.style.setProperty('--ac-bg', dog.themeBg || '#F5E8D8');
+    
+    title.innerText = `${dog.name}’s Dashboard`;
+    subtitle.innerText = `Detailed management panel for ${dog.sub || 'Dog'}`;
+    container.innerHTML = renderDetailView(dog);
+  }
+}
+
+// ── SIDEBAR PROFILES RENDER ──
+function renderSidebar() {
+  const box = document.getElementById('profiles-box');
+  if (!state.dogs.length) {
+    box.innerHTML = `<div style="padding:10px;font-size:11px;color:var(--sbmuted);text-align:center">No tracks added yet.</div>`;
+    return;
+  }
+  
+  box.innerHTML = state.dogs.map(p => {
+    return `
+      <div class="profile-item ${state.view==='detail'&&state.selectedDogId===p.id?'active':''}" id="p-item-${p.id}" onclick="setView('detail','${p.id}')" style="--ac:${p.themeColor}">
+        <div class="pi-av" style="background:${p.themeBg}">${p.avatar || '🐶'}</div>
+        <div style="min-width:0;flex:1;padding-right:6px">
+          <div class="pi-name">${esc(p.name)}</div>
+          <div class="pi-sub">${esc(p.sub || 'Dog')}</div>
+        </div>
+        <button class="pi-del" onclick="event.stopPropagation(); deleteDog('${p.id}')">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function openAddDogModal() {
+  const name = prompt("Enter Dog's Name:");
+  if (!name) return;
+  const breed = prompt("Enter Dog's Breed/Description:", "Golden Retriever");
+  
+  const emojis = ['🐶','🐕','🦮','🐕‍🦺','🐩','🐾','🦴'];
+  const randEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+  const colors = [
+    { c: '#C07A48', b: '#F5E8D8' },
+    { c: '#A06030', b: '#EEDCD0' },
+    { c: '#5A4E42', b: '#EBE4D8' }
+  ];
+  const choice = colors[Math.floor(Math.random() * colors.length)];
+  
+  const newDog = {
+    id: 'dog-' + Date.now(),
+    name: name,
+    sub: breed || 'Dog',
+    avatar: randEmoji,
+    themeColor: choice.c,
+    themeBg: choice.b,
+    age: '', weight: '', diet: '', meds: '',
+    tags: [], notes: '',
+    logs: [],
+    schedule: [
+      { id: 's-'+Date.now()+'-1', time: '08:00 AM', title: 'Breakfast Meal', icon: '🥣', note: '', notify: false, done: false },
+      { id: 's-'+Date.now()+'-2', time: '06:00 PM', title: 'Evening Walk', icon: '🌳', note: '', notify: false, done: false }
+    ],
+    timing: { walks: [], brushing: [], accidents: [] },
+    howmuch: { foodAmt: '', waterLvl: '', sleepTime: '', extraNotes: '' }
+  };
+  
+  state.dogs.push(newDog);
+  save();
+  renderSidebar();
+  setView('detail', newDog.id);
+}
+
+function deleteDog(id) {
+  if (confirm("Are you sure you want to delete this dog track completely?")) {
+    state.dogs = state.dogs.filter(d => d.id !== id);
+    state.globalEvents = state.globalEvents.filter(e => e.dogId !== id);
+    save();
+    renderSidebar();
+    if (state.selectedDogId === id) {
+      setView('home');
+    } else {
+      updateView();
+    }
+  }
+}
+
+// ── HOME / DASHBOARD VIEW ──
+function renderHomeView() {
+  if (!state.dogs.length) {
+    return `
+      <div class="empty-wrap">
+        <div class="empty-ic">🦴</div>
+        <h2 class="serif" style="font-size:22px;margin-bottom:6px">No Tracked Pets Present</h2>
+        <p style="color:var(--t3);max-width:280px;margin:0 auto 15px;font-size:13px">Click below to add your first dog track and begin monitoring logs, routines, and calendar updates.</p>
+        <button class="btn btn-dark" onclick="openAddDogModal()">+ Add New Dog Track</button>
+      </div>
+    `;
+  }
+  
+  // Grid cards showing immediate routine progress for each pet
+  let cardsHtml = state.dogs.map(p => {
+    const total = p.schedule.length;
+    const completed = p.schedule.filter(s => s.done).length;
+    const pct = total ? Math.round((completed / total) * 100) : 0;
+    
+    return `
+      <div class="card" style="cursor:pointer" onclick="setView('detail','${p.id}')">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div class="pi-av" style="background:${p.themeBg};font-size:16px;width:34px;height:34px">${p.avatar}</div>
+          <div>
+            <div class="card-title">${esc(p.name)}</div>
+            <div class="card-sub">${esc(p.sub)}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;font-weight:700;display:flex;justify-content:between;margin-bottom:3px">
+          <span style="color:var(--t2)">Routine Progress</span>
+          <span style="margin-left:auto;color:${p.themeColor}">${completed}/${total} done (${pct}%)</span>
+        </div>
+        <div class="pb-wrap" style="background:var(--card3)">
+          <div class="pb-fill" style="width:${pct}%;background:${p.themeColor}"></div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--t3);line-height:1.4">
+          ${p.logs.length ? `<strong>Latest Entry:</strong> ${esc(p.logs[0].time)} - ${esc(p.logs[0].text)}` : 'No custom records submitted today.'}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Upcoming entries across all schedules
+  let upcomingRows = [];
+  state.dogs.forEach(p => {
+    p.schedule.forEach(s => {
+      if (!s.done) upcomingRows.push({ dog: p, task: s });
+    });
+  });
+  
+  let scheduleSegment = '';
+  if (!upcomingRows.length) {
+    scheduleSegment = `<div class="empty-tab"><div class="ei">✨</div><div class="et">Everything cleared!</div><p style="font-size:11px;color:var(--t3)">All planned routines for your dogs have been recorded.</p></div>`;
+  } else {
+    scheduleSegment = `<div class="ev-list">` + upcomingRows.slice(0, 5).map(item => `
+      <div class="ev-row">
+        <div class="ev-time" style="color:${item.dog.themeColor}">${esc(item.task.time)}</div>
+        <div class="ev-icon" style="background:${item.dog.themeBg}">${item.task.icon || '🐾'}</div>
+        <div class="ev-info">
+          <div class="ev-name">${esc(item.task.title)} <span style="font-size:10px;font-weight:400;color:var(--t3);margin-left:4px">(${esc(item.dog.name)})</span></div>
+          ${item.task.note ? `<div class="ev-note">${esc(item.task.note)}</div>` : ''}
+        </div>
+        <button class="ev-check" onclick="fastCheckTask('${item.dog.id}','${item.task.id}')">✓</button>
+      </div>
+    `).join('') + `</div>`;
+  }
+
+  return `
+    <div class="detail-body">
+      <div class="banner" style="background:var(--card);border-left:4px solid var(--border2)">
+        🐾 Welcome back! Switch between individual pet tabs on the sidebar to update specific feeds, schedule notes, food weights, and metrics.
+      </div>
+      
+      <div class="section-label">Pet Tracking Summary</div>
+      <div class="card-grid">${cardsHtml}</div>
+      
+      <div style="display:grid;grid-template-columns:1fr;gap:15px;margin-top:5px">
+        <div>
+          <div class="section-label">Next Up On The Routine Schedules</div>
+          ${scheduleSegment}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function fastCheckTask(dogId, taskId) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if (dog) {
+    const t = dog.schedule.find(x => x.id === taskId);
+    if (t) {
+      t.done = true;
+      // auto add log
+      const now = new Date();
+      let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      dog.logs.unshift({ id: 'f-'+Date.now(), time: timeStr, text: `Completed: ${t.title}` });
+      save();
+      updateView();
+      renderSidebar();
+    }
+  }
+}
+
+// ── CALENDAR VIEW RENDER ──
+function renderCalendarView() {
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  
+  // Selected date events list
+  const selDateEvents = state.globalEvents.filter(e => e.date === state.calSelectedDate);
+  let listHtml = '';
+  if (!selDateEvents.length) {
+    listHtml = `<div style="padding:15px;text-align:center;font-size:12px;color:var(--t3)">No scheduled items recorded for this date.</div>`;
+  } else {
+    listHtml = selDateEvents.map(e => {
+      const dog = state.dogs.find(d => d.id === e.dogId);
+      return `
+        <div class="cal-ev-row">
+          <div class="cal-ev-time">${esc(e.time)}</div>
+          <div class="cal-ev-info">
+            <div class="cal-ev-name" style="${e.finished?'text-decoration:line-through;opacity:.5':''}">${esc(e.title)}</div>
+            <div class="cal-ev-who">🐶 For: <strong>${dog?esc(dog.name):'Deleted'}</strong> ${e.who?`| Handler/Loc: ${esc(e.who)}`:''}</div>
+          </div>
+          <button style="font-size:12px;color:var(--t3);cursor:pointer;padding:2px 4px" onclick="toggleCalEventFinished('${e.id}')">${e.finished?'🔄':'✓'}</button>
+          <button class="cal-ev-del" onclick="deleteCalEvent('${e.id}')">✕</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Options for dog select input
+  const dogOpts = state.dogs.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join('');
+
+  return `
+    <div class="cal-body">
+      <div class="cal-nav-row">
+        <h3 class="serif" style="font-size:16px" id="cal-month-label">${months[state.calMonth]} ${state.calYear}</h3>
+        <div class="cal-nav-btns">
+          <button class="cal-nav-btn" onclick="adjustCalMonth(-1)">‹</button>
+          <button class="cal-nav-btn" onclick="adjustCalMonth(1)">›</button>
+        </div>
+      </div>
+      
+      <div class="cal-grid" id="cal-grid-box"></div>
+      
+      <div class="cal-sel-box">
+        <div class="cal-sel-head">
+          <span style="font-size:12px;font-weight:700">Agenda: ${state.calSelectedDate}</span>
+        </div>
+        <div class="cal-sel-list">${listHtml}</div>
+        
+        <div class="cal-add-row">
+          <div class="f-group" style="width:110px">
+            <label>Dog</label>
+            <select class="f-sel" id="ca-dog" style="padding:5px 8px;font-size:12px">${dogOpts}</select>
+          </div>
+          <div class="f-group" style="width:70px">
+            <label>Time</label>
+            <input class="f-inp" id="ca-time" type="text" placeholder="10:00 AM" value="10:00 AM" style="padding:5px 8px;font-size:12px">
+          </div>
+          <div class="f-group" style="flex:1;min-width:130px">
+            <label>Item / Agenda Title</label>
+            <input class="f-inp" id="ca-title" type="text" placeholder="Vet Appt / Heartworm Dose" style="padding:5px 8px;font-size:12px">
+          </div>
+          <div class="f-group" style="width:110px">
+            <label>Location/Vet</label>
+            <input class="f-inp" id="ca-who" type="text" placeholder="Dr. Smith" style="padding:5px 8px;font-size:12px">
+          </div>
+          <button class="btn btn-dark btn-sm" style="border-radius:8px;padding:6px 12px" onclick="addCalEvent()">+ Add Item</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function adjustCalMonth(delta) {
+  state.calMonth += delta;
+  if (state.calMonth > 11) { state.calMonth = 0; state.calYear++; }
+  if (state.calMonth < 0) { state.calMonth = 11; state.calYear--; }
+  updateView();
+}
+
+function renderCalGrid() {
+  const box = document.getElementById('cal-grid-box');
+  if(!box) return;
+  
+  let html = `
+    <div class="cal-dow">Sun</div><div class="cal-dow">Mon</div><div class="cal-dow">Tue</div>
+    <div class="cal-dow">Wed</div><div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div>
+  `;
+  
+  const firstDay = new Date(state.calYear, state.calMonth, 1).getDay();
+  const numDays = new Date(state.calYear, state.calMonth + 1, 0).getDate();
+  const prevNumDays = new Date(state.calYear, state.calMonth, 0).getDate();
+  
+  // Previous month padding cells
+  for (let i = firstDay - 1; i >= 0; i--) {
+    html += `<div class="cal-cell other"><div class="cal-day-num">${prevNumDays - i}</div></div>`;
+  }
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  // Active month days
+  for (let d = 1; d <= numDays; d++) {
+    let mStr = String(state.calMonth + 1).padStart(2, '0');
+    let dStr = String(d).padStart(2, '0');
+    let fullDate = `${state.calYear}-${mStr}-${dStr}`;
+    
+    let isToday = fullDate === todayStr;
+    let isSelected = fullDate === state.calSelectedDate;
+    
+    let cellClass = 'cal-cell';
+    if (isToday) cellClass += ' today';
+    if (isSelected) cellClass += ' selected';
+    
+    // Day item filters
+    const dayEvents = state.globalEvents.filter(e => e.date === fullDate);
+    let pills = '';
+    dayEvents.slice(0, 2).forEach(e => {
+      const dog = state.dogs.find(p => p.id === e.dogId);
+      const bg = dog ? dog.themeBg : 'var(--card3)';
+      const color = dog ? dog.themeColor : 'var(--t1)';
+      pills += `<div class="cal-ev-pill" style="background:${bg};color:${color}">${esc(e.title)}</div>`;
+    });
+    if (dayEvents.length > 2) {
+      pills += `<div class="cal-ev-pill" style="background:transparent;color:var(--t3);font-weight:700">+${dayEvents.length - 2} more</div>`;
+    }
+    
+    html += `
+      <div class="${cellClass}" onclick="selectCalDate('${fullDate}')">
+        <div class="cal-day-num">${d}</div>
+        ${pills}
+      </div>
+    `;
+  }
+  
+  box.innerHTML = html;
+}
+
+function selectCalDate(dateStr) {
+  state.calSelectedDate = dateStr;
+  updateView();
+}
+
+function addCalEvent() {
+  const dogId = document.getElementById('ca-dog').value;
+  const time = document.getElementById('ca-time').value || '12:00 PM';
+  const title = document.getElementById('ca-title').value;
+  const who = document.getElementById('ca-who').value;
+  
+  if (!dogId || !title) {
+    alert("Please assign a dog profile and input an agenda title statement.");
+    return;
+  }
+  
+  state.globalEvents.push({
+    id: 'ge-' + Date.now(),
+    dogId: dogId,
+    date: state.calSelectedDate,
+    time: time,
+    title: title,
+    who: who,
+    finished: false
+  });
+  
+  save();
+  updateView();
+}
+
+function toggleCalEventFinished(id) {
+  const ev = state.globalEvents.find(e => e.id === id);
+  if (ev) {
+    ev.finished = !ev.finished;
+    save();
+    updateView();
+  }
+}
+
+function deleteCalEvent(id) {
+  state.globalEvents = state.globalEvents.filter(e => e.id !== id);
+  save();
+  updateView();
+}
+
+
+// ── DETAILED INDIVIDUAL PET VIEW ──
+function renderDetailView(dog) {
+  // Metric variables
+  const ageVal = dog.age || 'Not set';
+  const wtVal = dog.weight || 'Not set';
+  const dietVal = dog.diet || 'Not set';
+  const medVal = dog.meds || 'Not set';
+
+  // Build Tab Header
+  let tabHeader = `
+    <div class="detail-head">
+      <div class="dh-row">
+        <div class="dh-av" style="background:${dog.themeBg}">${dog.avatar}</div>
+        <div>
+          <div class="dh-name">${esc(dog.name)}</div>
+          <div class="dh-meta">${esc(dog.sub)} &bull; ${esc(ageVal)} &bull; ${esc(wtVal)}</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn ${state.activeTab==='schedule'?'active':''}" onclick="setDetailTab('schedule')">🗓️ Daily Schedule</button>
+        <button class="tab-btn ${state.activeTab==='timing'?'active':''}" onclick="setDetailTab('timing')">⏱️ Routines</button>
+        <button class="tab-btn ${state.activeTab==='howmuch'?'active':''}" onclick="setDetailTab('howmuch')">📊 Logs & Amounts</button>
+        <button class="tab-btn ${state.activeTab==='info'?'active':''}" onclick="setDetailTab('info')">📋 Vital Info</button>
+        <button class="tab-btn ${state.activeTab==='notes'?'active':''}" onclick="setDetailTab('notes')">🗒️ Notes</button>
+      </div>
+    </div>
+  `;
+
+  let tabBody = '';
+  if (state.activeTab === 'schedule') tabBody = renderScheduleTab(dog);
+  else if (state.activeTab === 'timing') tabBody = renderTimingTab(dog);
+  else if (state.activeTab === 'howmuch') tabBody = renderHowMuchTab(dog);
+  else if (state.activeTab === 'info') tabBody = renderInfoTab(dog);
+  else if (state.activeTab === 'notes') tabBody = renderNotesTab(dog);
+
+  return tabHeader + `<div class="detail-body" id="tab-body-container">${tabBody}</div>`;
+}
+
+function setDetailTab(t) {
+  state.activeTab = t;
+  const dog = state.dogs.find(d => d.id === state.selectedDogId);
+  if (dog) {
+    updateView();
+  }
+}
+
+function updateField(dogId, field, val) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if (dog) {
+    dog[field] = val;
+    save();
+  }
+}
+
+function updateNestedField(dogId, category, field, val) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if (dog && dog[category]) {
+    dog[category][field] = val;
+    save();
+  }
+}
+
+// ── SCHEDULE TAB ──
+function renderScheduleTab(p) {
+  let listHtml = '';
+  if (!p.schedule.length) {
+    listHtml = `<div class="empty-tab"><div class="ei">📅</div><div class="et">No items built</div></div>`;
+  } else {
+    // sort by time estimate helper
+    listHtml = p.schedule.map(s => `
+      <div class="ev-row ${s.done?'done':''}">
+        <div class="ev-time">${esc(s.time)}</div>
+        <div class="ev-icon" style="background:var(--card2)">${esc(s.icon || '🐾')}</div>
+        <div class="ev-info">
+          <div class="ev-name" style="${s.done?'text-decoration:line-through':''}">${esc(s.title)}</div>
+          ${s.note ? `<div class="ev-note">${esc(s.note)}</div>` : ''}
+        </div>
+        <button class="ev-bell ${s.notify?'on':''}" onclick="toggleTaskBell('${p.id}','${s.id}')">${s.notify?'🔔':'🔕'}</button>
+        <button class="ev-check ${s.done?'done':''}" style="${s.done?`background:${p.themeColor};border-color:${p.themeColor}`:''}" onclick="toggleTaskDone('${p.id}','${s.id}')">✓</button>
+        <button class="ev-del" onclick="deleteTask('${p.id}','${s.id}')">✕</button>
+      </div>
+    `).join('');
+  }
+
+  // Action log component on right/bottom side
+  let logsHtml = p.logs.map(l => `
+    <div class="log-row">
+      <div class="log-time">${esc(l.time)}</div>
+      <div class="log-text">${esc(l.text)}</div>
+      <button class="log-del" onclick="deleteLog('${p.id}','${l.id}')">✕</button>
+    </div>
+  `).join('');
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr minmax(240px, 300px);gap:18px;align-items:flex-start;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);margin-bottom:7px">Routine Checkpoints</div>
+        <div class="ev-list">${listHtml}</div>
+        
+        <div class="add-panel" style="margin-top:12px">
+          <div class="add-panel-title">+ Append Custom Checkpoint Item</div>
+          <div class="f-row">
+            <div class="f-group" style="width:75px">
+              <label>Time</label>
+              <input class="f-inp" id="f-task-time" type="text" placeholder="08:00 AM" value="08:00 AM">
+            </div>
+            <div class="f-group" style="width:46px">
+              <label>Icon</label>
+              <input class="f-inp" id="f-task-icon" type="text" placeholder="🥣" value="🥣">
+            </div>
+            <div class="f-group" style="flex:1;min-width:120px">
+              <label>Task Title Description</label>
+              <input class="f-inp" id="f-task-title" type="text" placeholder="Feeding routine / Walk">
+            </div>
+          </div>
+          <div class="f-row">
+            <div class="f-group" style="flex:1">
+              <label>Internal Note / Criteria Instruction</label>
+              <input class="f-inp" id="f-task-note" type="text" placeholder="Mix meds or check paws afterward">
+            </div>
+            <button class="btn btn-dark" style="padding:8px 16px;border-radius:9px" onclick="addTask('${p.id}')">+ Add</button>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);margin-bottom:7px">Immediate Actions Log</div>
+        <div class="card" style="padding:11px">
+          <button class="log-btn" style="background:#4CAF50" onclick="quickLog('${p.id}','🐾 Potty Break Success')">🐾 Quick Log Potty Break</button>
+          <div style="display:flex;gap:4px">
+            <button class="log-btn-out" onclick="quickLog('${p.id}','🥣 Finished Meal')">🥣 Log Food</button>
+            <button class="log-btn-out" onclick="quickLog('${p.id}','💊 Meds Administered')">💊 Log Meds</button>
+          </div>
+          <div style="position:relative;margin-top:6px;display:flex;gap:4px">
+            <input class="f-inp" id="f-custom-log" style="font-size:11px;padding:6px 9px" placeholder="Type custom entry note..." onkeydown="if(event.key==='Enter')submitCustomLog('${p.id}')">
+            <button class="btn btn-dark btn-sm" style="border-radius:8px" onclick="submitCustomLog('${p.id}')">Post</button>
+          </div>
+          <div class="log-list">${logsHtml || '<div style="padding:10px;text-align:center;font-size:11px;color:var(--t3)">No submissions compiled today.</div>'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleTaskDone(dogId, taskId) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if(dog) {
+    const s = dog.schedule.find(x => x.id === taskId);
+    if(s) {
+      s.done = !s.done;
+      if (s.done) {
+        const now = new Date();
+        let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        dog.logs.unshift({ id: 'l-'+Date.now(), time: timeStr, text: `Completed: ${s.title}` });
+      }
+      save(); updateView(); renderSidebar();
+    }
+  }
+}
+
+function toggleTaskBell(dogId, taskId) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if(dog) {
+    const s = dog.schedule.find(x => x.id === taskId);
+    if(s) { s.notify = !s.notify; save(); updateView(); }
+  }
+}
+
+function deleteTask(dogId, taskId) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if(dog) {
+    dog.schedule = dog.schedule.filter(x => x.id !== taskId);
+    save(); updateView(); renderSidebar();
+  }
+}
+
+function addTask(dogId) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if(!dog) return;
+  const time = document.getElementById('f-task-time').value || '12:00 PM';
+  const icon = document.getElementById('f-task-icon').value || '🐾';
+  const title = document.getElementById('f-task-title').value;
+  const note = document.getElementById('f-task-note').value;
+  
+  if (!title) { alert("Please input an item title statement."); return; }
+  
+  dog.schedule.push({
+    id: 's-' + Date.now(),
+    time: time, icon: icon, title: title, note: note, notify: false, done: false
+  });
+  save(); updateView(); renderSidebar();
+}
+
+function quickLog(dogId, message) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if(dog) {
+    const now = new Date();
+    let timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    dog.logs.unshift({ id: 'ql-'+Date.now(), time: timeStr, text: message });
+    save(); updateView();
+  }
+}
+
+function submitCustomLog(dogId) {
+  const inp = document.getElementById('f-custom-log');
+  if(!inp || !inp.value.trim()) return;
+  quickLog(dogId, inp.value.trim());
+  inp.value = '';
+}
+
+function deleteLog(dogId, logId) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if(dog) {
+    dog.logs = dog.logs.filter(l => l.id !== logId);
+    save(); updateView();
+  }
+}
+
+// ── ROUTINES TAB ──
+function renderTimingTab(p) {
+  return `
+    <div class="banner" style="background:var(--card);font-size:11px;color:var(--t2)">
+      📊 Use this section to map out recurring routines that do not adhere to fixed hour alerts (e.g., standard workout walks or grooming schedules).
+    </div>
+    
+    <div class="chip-grid">
+      <div class="chip-card">
+        <div class="chip-label">🌳 Walk Windows</div>
+        <div class="chips" id="ch-box-walks">${renderChips(p, 'walks', '#E2F3EB', '#2A6044')}</div>
+        <div class="chip-add">
+          <input class="chip-inp" id="ch-inp-walks" placeholder="e.g. 08:00 AM">
+          <button class="chip-add-btn" style="background:#2A6044" onclick="addChip('${p.id}','walks')">+</button>
+        </div>
+      </div>
+      
+      <div class="chip-card">
+        <div class="chip-label">🧼 Grooming Schedule</div>
+        <div class="chips" id="ch-box-brushing">${renderChips(p, 'brushing', '#EBF0FB', '#3D5FA0')}</div>
+        <div class="chip-add">
+          <input class="chip-inp" id="ch-inp-brushing" placeholder="e.g. Sat Morning">
+          <button class="chip-add-btn" style="background:#3D5FA0" onclick="addChip('${p.id}','brushing')">+</button>
+        </div>
+      </div>
+      
+      <div class="chip-card">
+        <div class="chip-label">⚠️ Accidents / Notable Incidents</div>
+        <div class="chips" id="ch-box-accidents">${renderChips(p, 'accidents', '#FDEAEA', '#C44343')}</div>
+        <div class="chip-add">
+          <input class="chip-inp" id="ch-inp-accidents" placeholder="e.g. Vomited 4PM">
+          <button class="chip-add-btn" style="background:#C44343" onclick="addChip('${p.id}','accidents')">+</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderChips(p, field, bg, color) {
+  if (!p.timing || !p.timing[field] || !p.timing[field].length) {
+    return `<span style="font-size:11px;color:var(--t3)">None logged</span>`;
+  }
+  return p.timing[field].map((c, i) => `
+    <div class="chip" style="background:${bg};color:${color}">
+      <span>${esc(c)}</span>
+      <button class="chip-x" onclick="removeChip('${p.id}','${field}',${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function addChip(dogId, field) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  const inp = document.getElementById(`ch-inp-${field}`);
+  if (!dog || !inp || !inp.value.trim()) return;
+  
+  if (!dog.timing) dog.timing = { walks: [], brushing: [], accidents: [] };
+  if (!dog.timing[field]) dog.timing[field] = [];
+  
+  dog.timing[field].push(inp.value.trim());
+  inp.value = '';
+  save(); updateView();
+}
+
+function removeChip(dogId, field, idx) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if (dog && dog.timing && dog.timing[field]) {
+    dog.timing[field].splice(idx, 1);
+    save(); updateView();
+  }
+}
+
+// ── LOGS & AMOUNTS TAB ──
+function renderHowMuchTab(p) {
+  if (!p.howmuch) p.howmuch = { foodAmt: '', waterLvl: '', sleepTime: '', extraNotes: '' };
+  return `
+    <div class="hm-grid">
+      <div class="hm-card">
+        <div class="hm-label">🍖 Food Portions & Weights</div>
+        <input class="hm-inp" value="${esc(p.howmuch.foodAmt)}" placeholder="e.g. 2 cups morning/night" oninput="updateNestedField('${p.id}','howmuch','foodAmt',this.value)">
+      </div>
+      <div class="hm-card">
+        <div class="hm-label">💧 Water Intake Observations</div>
+        <input class="hm-inp" value="${esc(p.howmuch.waterLvl)}" placeholder="e.g. Drank full bowl by noon" oninput="updateNestedField('${p.id}','howmuch','waterLvl',this.value)">
+      </div>
+      <div class="hm-card">
+        <div class="hm-label">💤 Rest / Nap Duration</div>
+        <input class="hm-inp" value="${esc(p.howmuch.sleepTime)}" placeholder="e.g. Lethargic / Slept 10 hrs" oninput="updateNestedField('${p.id}','howmuch','sleepTime',this.value)">
+      </div>
+      <div class="hm-card span2">
+        <div class="hm-label">📝 Additional Day Log Notes</div>
+        <textarea class="hm-ta" placeholder="Track specific stool records, consistency changes, energy levels, unusual indicators or behavioral concerns..." oninput="updateNestedField('${p.id}','howmuch','extraNotes',this.value)">${esc(p.howmuch.extraNotes)}</textarea>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--t3);margin-top:8px;text-align:right">💾 All structural changes update instantly on focus exit.</div>
+  `;
+}
+
+// ── VITAL INFO TAB ──
+function renderInfoTab(p) {
+  return `
+    <div style="max-width:550px">
+      <div class="info-grid">
+        <div class="if-group">
+          <div class="if-label">Age Metric</div>
+          <input class="if-inp" value="${esc(p.age)}" placeholder="e.g. 3 years" oninput="updateField('${p.id}','age',this.value); syncMeta('${p.id}')">
+        </div>
+        <div class="if-group">
+          <div class="if-label">Weight Metric</div>
+          <input class="if-inp" value="${esc(p.weight)}" placeholder="e.g. 65 lbs" oninput="updateField('${p.id}','weight',this.value); syncMeta('${p.id}')">
+        </div>
+        <div class="if-group full">
+          <div class="if-label">Dietary Directives</div>
+          <input class="if-inp" value="${esc(p.diet)}" placeholder="e.g. Grain-free kibble mixed with chicken wet food" oninput="updateField('${p.id}','diet',this.value)">
+        </div>
+        <div class="if-group full">
+          <div class="if-label">Active Medical Prescriptions</div>
+          <input class="if-inp" value="${esc(p.meds)}" placeholder="e.g. Apoquel 16mg daily with breakfast" oninput="updateField('${p.id}','meds',this.value)">
+        </div>
+      </div>
+      
+      <div class="section-label">Profile Descriptor Tags</div>
+      <div class="tag-row">${p.tags.map((t, i) => `<div class="tag" style="background:var(--card3);color:var(--t2)"><span>${esc(t)}</span><button class="tag-x" onclick="removeTag('${p.id}',${i})">✕</button></div>`).join('')}${!p.tags.length?'<span style="font-size:12px;color:var(--t3)">No descriptor tags compiled yet</span>':''}</div>
+      <div style="display:flex;gap:7px;margin-top:6px">
+        <input class="if-inp" id="tag-input" style="flex:1" placeholder="Add tag (e.g. high-energy, crate-trained, rescue)..." onkeydown="if(event.key==='Enter')addTag('${p.id}')">
+        <button class="btn btn-dark btn-sm" onclick="addTag('${p.id}')">+ Add</button>
+      </div>
+    </div>
+  `;
+}
+
+function syncMeta(id) {
+  // simple helper to refresh headings dynamically
+  const dog = state.dogs.find(d => d.id === id);
+  if(dog && state.view === 'detail') {
+    document.querySelector('.dh-meta').innerHTML = `${esc(dog.sub)} &bull; ${esc(dog.age || 'Not set')} &bull; ${esc(dog.weight || 'Not set')}`;
+  }
+}
+
+function addTag(dogId) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  const inp = document.getElementById('tag-input');
+  if (!dog || !inp || !inp.value.trim()) return;
+  if (!dog.tags) dog.tags = [];
+  dog.tags.push(inp.value.trim());
+  inp.value = '';
+  save(); updateView();
+}
+
+function removeTag(dogId, idx) {
+  const dog = state.dogs.find(d => d.id === dogId);
+  if (dog && dog.tags) {
+    dog.tags.splice(idx, 1);
+    save(); updateView();
+  }
+}
+
+// ── NOTES TAB ──
+function renderNotesTab(p) {
+  return `
+    <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);margin-bottom:7px">🗒️ Care Instructions & Notes</div>
+    <textarea class="notes-ta" placeholder="Everything a caregiver needs — routines, triggers, communication style, comfort items, emergency contacts, what to do in a crisis..." oninput="updateField('${p.id}','notes',this.value)">${esc(p.notes)}</textarea>
+    <div style="font-size:11px;color:var(--t3);margin:6px 0 10px">💾 Saves automatically as you type.</div>
+    ${p.notes ? `<div style="padding:12px;background:var(--card2);border-radius:13px;font-size:13px;white-space:pre-wrap;line-height:1.6;border:1px solid var(--border)">${esc(p.notes)}</div>` : ''}
+  `;
+}
+
+
+// ── NOTIFICATION TICKER SIMULATION ──
+function startNotificationTicker() {
+  const messages = [
+    "Reminder: Feed dinner kibble batches",
+    "Checkup checklist: Evening outdoor routine walk",
+    "Metric reminder: Validate clean water bowls"
+  ];
+  let idx = 0;
+  
+  setInterval(() => {
+    const dot = document.getElementById('notif-dot');
+    const txt = document.getElementById('notif-text');
+    if(!dot || !txt) return;
+    
+    dot.classList.add('on');
+    txt.innerText = messages[idx];
+    
+    setTimeout(() => { dot.classList.remove('on'); }, 3000);
+    
+    idx = (idx + 1) % messages.length;
+  }, 12000);
+}
+
+
+// ── AUXILIARY SANITIZATION HELPERS ──
+function esc(str) {
+  if(!str) return '';
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+window.onload = init;
+</script>
+
+</body>
+</html>
