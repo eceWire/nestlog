@@ -27,7 +27,7 @@ I wanted to build a fast, ultra lightweight interface that runs entirely in the 
 
 ###  Tech Stack & How It Works
 
-The architecture is intentionally minimal, designed as an optimized single-file web application (`Bruh.html`) to maximize speed and zero-dependency portability.
+The architecture is intentionally minimal, designed as an optimized single-file web application (`index.html`) to maximize speed and zero-dependency portability.
 
 * **Development Environment:** Formatted, written, and structured entirely using **PyCharm**.
 * **Structure:** Semantic HTML5 to handle views dynamically.
@@ -67,5 +67,5 @@ Screenshots
 
 
 Credits for AI:
-No AI was used in the process of coding. AI was used to add comments to code however, not to update or catch errors.
+No AI was used in the process of coding. AI was used to add comments however, not to update code or catch errors.
 
