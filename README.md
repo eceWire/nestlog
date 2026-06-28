@@ -16,11 +16,11 @@ I wanted to build a fast, ultra lightweight interface that runs entirely in the 
 
 ###  Features & What It Does
 
-* **Multi-Profile Switching:** Instantly cycle between different dogs (like the preloaded sandbox profile for *Buddy*), each featuring updated theme states.
-* **Interactive Day-to-Day Checklist:** Check off morning walks, feeding times, and vet pills in real time with auto-updating progress metrics.
-* **Global Month-at-a-Glance Calendar:** A clean, grid based layout mapping out upcoming vet checkups, medical deadlines, and custom milestones.
+* **Multi Profile Switching:** Instantly cycle between different dogs (like the preloaded sandbox profile for *Buddy*), each featuring updated theme states.
+* **Interactive Day to Day Checklist:** Check off morning walks, feeding times, and vet pills in real time with auto-updating progress metrics.
+* **Global Month at a Glance Calendar:** A clean, grid based layout mapping out upcoming vet checkups, medical deadlines, and custom milestones.
 * **Live Notification Ticker:** A simulated real-time alert system at the top of the screen that pushes care reminders sequentially.
-* **Auto-Saving Care Notebook:** A markdown-ready digital notepad where owners can leave critical notes (triggers, routines, emergency contacts) that persist automatically as you type.
+* **Auto Saving Care Notebook:** A markdown-ready digital notepad where owners can leave critical notes (triggers, routines, emergency contacts) that persist automatically as you type.
 * **Adaptive Dual Themes:** Fully styled light and dark modes optimized for night-time care visibility.
 
 ---
